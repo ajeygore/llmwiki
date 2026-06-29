@@ -164,6 +164,7 @@ This repository is an **LLMWiki** knowledge base. It is designed to be maintaine
 - `/wiki/` — The directory containing all wiki markdown files (concepts, summaries, logs, etc.).
 - `/wiki/index.md` — The content catalog containing links and summaries of all pages. Used by the browser engine to construct the navigation sidebar.
 - `/wiki/log.md` — The chronological action log.
+- `/wiki/skills/` — Custom workspaces-specific skills directory. Each subfolder contains a specialized agent skill.
 - `/llmwiki/` — The LLMWiki rendering engine (JS and CSS assets).
 - `/index.html` — The customizable HTML template for human browsing.
 - `/agents.md` — This instruction manual.
@@ -194,6 +195,20 @@ Periodically (or when asked), run a lint pass to keep the wiki healthy. Identify
 2. **Stale Claims**: Superseded facts that are no longer accurate based on newer documents.
 3. **Orphan Pages**: Pages in `/wiki/` that have no inbound links from the rest of the wiki (or are missing from `wiki/index.md`).
 4. **Data Gaps & Missing Links**: Concepts mentioned on pages that would benefit from having their own page or linking to an existing page.
+
+---
+
+## 🛠️ Workspace Custom Skills (`/wiki/skills/`)
+
+Custom coding agent capabilities can be packaged as skills inside `/wiki/skills/<skill_name>/`. Visiting agents must load and follow these skills:
+- **`SKILL.md`**: Main manifest defining frontmatter `name` and `description` + instruction rules.
+- **`references/`**: Place API manuals, library specs, or database schemas in this folder. Keep files short and split to remain token-efficient.
+- **`scripts/`**: Helper scripts the agent can run.
+
+### 🔄 Loops & Scheduling Policies
+If executing automated loops or scheduled agent flows (cron triggers, cron iteration timer schedules):
+- **Safety Terminations**: All agent execution loops MUST declare a clean early-termination condition (e.g., "stop when `/raw/` is empty" or a maximum limit of 5 consecutive iterations).
+- **Scheduled Runs**: Automations running on system schedules (like hourly indexing or daily lint runs) must document their cron schedules in `wiki/skills/` and log execution metrics to `/wiki/log.md`.
 
 ---
 
@@ -229,6 +244,24 @@ This project is a complete implementation of Andrej Karpathy's [LLM Wiki archite
 
 ### 🛠️ About Setup
 Setting up a new wiki workspace is straightforward. Because the LLMWiki engine is designed to live inside target workspaces as an external dependent folder (`/llmwiki/`), you simply register the engine as a Git Submodule inside any empty directory, and then run the bootstrapping script (or delegate it to an AI assistant). The script populates the workspace root with standard agent manuals (`agents.md`), the index template (`index.html`), and initial markdown directory schemas (`/wiki/`) ready for content population.
+
+---
+
+## 🔄 How It Works & Migration Flow
+
+LLMWiki separates your **agent workspace configs** (memories, rules, custom skills) from your **active project source code**. This ensures a clean project repo while keeping all agent collective knowledge shareable in a separate wiki repository.
+
+### The Lifecycle:
+1. **Set the Engine**: Add `llmwiki` as a dependent git submodule in an empty wiki repository.
+2. **Launch & Browse**: Run the local server (`./llmwiki/run`) to start the browser dashboard.
+3. **Connect Your Coding Agent**: Open your main project work directory in your AI coding workspace, and paste the bootstrap welcome prompt.
+4. **Link Workspace Rules**: Tell your coding agent in the project workspace configuration (`AGENTS.md` or `.agents/AGENTS.md`) that instead of local project-specific instruction folders and ad-hoc files, **all rules, context, and skills are maintained centrally in your wiki repository**.
+5. **Share with the Team**: Commit and push the wiki repository. Now, the entire team shares the same collective agent context, and agents can read/update it collaboratively without contaminating the project code.
+
+### 🚚 Migrating Existing Agent Workspaces:
+If you already have a set of project instructions, active context states, or custom skills, simply ask your coding agent to migrate them:
+> *"Migrate all my current project context, custom skills, and AGENTS.md rules over to my LLMWiki directory located at <local_path_to_wiki_root>."*
+The agent will organize them into `wiki/context.md`, `agents.md`, and the `wiki/skills/` directory.
 
 ---
 
@@ -344,6 +377,9 @@ Welcome to the {wiki_name} catalog. This catalog is parsed by the LLMWiki engine
 
 ## Operations
 - [Activity Log](log.md) — Chronological history of modifications
+
+## Custom Skills
+- [Example Skill](skills/example-skill/SKILL.md) — Demonstration of agent capabilities and loop policies
 """
     create_file_if_missing(catalog_path, catalog_content, "wiki directory index")
     
@@ -502,6 +538,50 @@ summary: Active session meta-context, handoffs, and current operational states.
 This file tracks active session state, progress, and agent handoffs between task iterations.
 """
     create_file_if_missing(context_path, context_content, "wiki context page")
+    
+    # 12. Create wiki/skills/example-skill/SKILL.md
+    skill_md_path = os.path.join(wiki_root, 'wiki', 'skills', 'example-skill', 'SKILL.md')
+    skill_md_content = """---
+name: example-skill
+description: An example custom agent skill template showing how to layout rules, references, loops, and scheduled tasks.
+---
+
+# Example Agent Skill Template
+
+This directory showcases the structure for declaring custom agent skills, references, and automation procedures.
+
+## 📁 Skill Structure Layout
+- `SKILL.md` — The main instruction manifest (this file) containing metadata tags in frontmatter.
+- `references/` — Subdirectory containing long-form reference documentation, API specs, or coding guidelines.
+- `scripts/` — Subdirectory for helper utilities or diagnostic scripts the agent can execute.
+
+---
+
+## 🔄 Loops, Recursion, and Scheduled Workflows
+
+To execute periodic or repetitive actions (such as indexing, health sweeps, or cron-like runs), agents should configure:
+
+### 1. Scheduled Cron Tasks
+Use scheduling mechanisms (like cron or system timers) to trigger periodic agent invocations. For example:
+- **Index Refresher**: Run an indexing agent every 6 hours to scan for new raw files.
+- **Lint Sweep**: Run a consistency lint agent every 24 hours to find orphans or stale facts.
+
+### 2. Early-Terminating Loops
+When working on multi-step workflows (e.g. batch-processing multiple raw PDFs), configure explicit timer conditions or sender-specific triggers to avoid runaway execution loops.
+Always establish:
+- A clear termination condition (e.g., "stop when `raw/` is empty").
+- A maximum iteration count (e.g. limit execution to 5 consecutive runs).
+"""
+    create_file_if_missing(skill_md_path, skill_md_content, "example skill manifest")
+
+    # 13. Create wiki/skills/example-skill/references/README.md
+    skill_ref_path = os.path.join(wiki_root, 'wiki', 'skills', 'example-skill', 'references', 'README.md')
+    skill_ref_content = """# Skill References
+
+Place long-form API specifications, database schemas, library guides, or coding style documents here.
+This keeps the main `SKILL.md` instruction file short and token-efficient, while allowing agents to load references on-demand when performing skill tasks.
+"""
+    create_file_if_missing(skill_ref_path, skill_ref_content, "example skill references readme")
     
     print("-" * 50)
     print(f"✅ {wiki_name} Repository Skeleton Ready!")

@@ -13,3 +13,6 @@ Welcome to the LLMWiki catalog. This catalog is parsed by the LLMWiki engine to 
 
 ## Operations
 - [Activity Log](log.md) — Chronological history of modifications
+
+## Custom Skills
+- [Example Skill](skills/example-skill/SKILL.md) — Demonstration of agent capabilities and loop policies

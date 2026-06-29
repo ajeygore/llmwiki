@@ -10,6 +10,7 @@ This repository is an **LLMWiki** knowledge base. It is designed to be maintaine
 - `/wiki/` — The directory containing all wiki markdown files (concepts, summaries, logs, etc.).
 - `/wiki/index.md` — The content catalog containing links and summaries of all pages. Used by the browser engine to construct the navigation sidebar.
 - `/wiki/log.md` — The chronological action log.
+- `/wiki/skills/` — Custom workspaces-specific skills directory. Each subfolder contains a specialized agent skill.
 - `/llmwiki/` — The LLMWiki rendering engine (JS and CSS assets).
 - `/index.html` — The customizable HTML template for human browsing.
 - `/agents.md` — This instruction manual.
@@ -40,6 +41,20 @@ Periodically (or when asked), run a lint pass to keep the wiki healthy. Identify
 2. **Stale Claims**: Superseded facts that are no longer accurate based on newer documents.
 3. **Orphan Pages**: Pages in `/wiki/` that have no inbound links from the rest of the wiki (or are missing from `wiki/index.md`).
 4. **Data Gaps & Missing Links**: Concepts mentioned on pages that would benefit from having their own page or linking to an existing page.
+
+---
+
+## 🛠️ Workspace Custom Skills (`/wiki/skills/`)
+
+Custom coding agent capabilities can be packaged as skills inside `/wiki/skills/<skill_name>/`. Visiting agents must load and follow these skills:
+- **`SKILL.md`**: Main manifest defining frontmatter `name` and `description` + instruction rules.
+- **`references/`**: Place API manuals, library specs, or database schemas in this folder. Keep files short and split to remain token-efficient.
+- **`scripts/`**: Helper scripts the agent can run.
+
+### 🔄 Loops & Scheduling Policies
+If executing automated loops or scheduled agent flows (cron triggers, cron iteration timer schedules):
+- **Safety Terminations**: All agent execution loops MUST declare a clean early-termination condition (e.g., "stop when `/raw/` is empty" or a maximum limit of 5 consecutive iterations).
+- **Scheduled Runs**: Automations running on system schedules (like hourly indexing or daily lint runs) must document their cron schedules in `wiki/skills/` and log execution metrics to `/wiki/log.md`.
 
 ---
 

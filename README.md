@@ -9,6 +9,24 @@ Setting up a new wiki workspace is straightforward. Because the LLMWiki engine i
 
 ---
 
+## 🔄 How It Works & Migration Flow
+
+LLMWiki separates your **agent workspace configs** (memories, rules, custom skills) from your **active project source code**. This ensures a clean project repo while keeping all agent collective knowledge shareable in a separate wiki repository.
+
+### The Lifecycle:
+1. **Set the Engine**: Add `llmwiki` as a dependent git submodule in an empty wiki repository.
+2. **Launch & Browse**: Run the local server (`./llmwiki/run`) to start the browser dashboard.
+3. **Connect Your Coding Agent**: Open your main project work directory in your AI coding workspace, and paste the bootstrap welcome prompt.
+4. **Link Workspace Rules**: Tell your coding agent in the project workspace configuration (`AGENTS.md` or `.agents/AGENTS.md`) that instead of local project-specific instruction folders and ad-hoc files, **all rules, context, and skills are maintained centrally in your wiki repository**.
+5. **Share with the Team**: Commit and push the wiki repository. Now, the entire team shares the same collective agent context, and agents can read/update it collaboratively without contaminating the project code.
+
+### 🚚 Migrating Existing Agent Workspaces:
+If you already have a set of project instructions, active context states, or custom skills, simply ask your coding agent to migrate them:
+> *"Migrate all my current project context, custom skills, and AGENTS.md rules over to my LLMWiki directory located at <local_path_to_wiki_root>."*
+The agent will organize them into `wiki/context.md`, `agents.md`, and the `wiki/skills/` directory.
+
+---
+
 ## 📁 Repository Layout
 
 - `/raw/` — Immutable source documents (articles, PDFs, transcriptions) to be processed.
