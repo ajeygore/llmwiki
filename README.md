@@ -2,6 +2,11 @@
 
 LLMWiki is a lightweight, zero-build personal knowledge base engine that bridges the gap between human readers and AI agents. It enables humans to read wiki pages as beautiful, rich, responsive HTML in their browser, while allowing AI agents to read and modify raw Markdown files directly in the codebase.
 
+This project is a complete implementation of Andrej Karpathy's [LLM Wiki architecture design pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).
+
+### 🛠️ About Setup
+Setting up a new wiki workspace is straightforward. Because the LLMWiki engine is designed to live inside target workspaces as an external dependent folder (`/llmwiki/`), you simply register the engine as a Git Submodule inside any empty directory, and then run the bootstrapping script (or delegate it to an AI assistant). The script populates the workspace root with standard agent manuals (`agents.md`), the index template (`index.html`), and initial markdown directory schemas (`/wiki/`) ready for content population.
+
 ---
 
 ## 📁 Repository Layout
