@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLMWiki</title>
+  
+  <!-- Google Font: Roboto -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Markdown Parser (Marked) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
+  <!-- Syntax Highlighting (Prism) -->
+  <link id="prismThemeLink" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  
+  <!-- Engine Styling -->
+  <link rel="stylesheet" href="llmwiki/style.css">
+</head>
+<body class="dark-mode">
+  <div class="app-container">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <span class="brand-dot"></span>
+          <h1>LLMWiki</h1>
+        </div>
+        <button class="mobile-close" id="mobileCloseBtn" aria-label="Close sidebar">✕</button>
+      </div>
+      
+      <div class="sidebar-search">
+        <input type="text" id="searchInput" placeholder="Filter pages..." autocomplete="off">
+      </div>
+      
+      <nav class="sidebar-nav" id="sidebarNav">
+        <div class="loading-placeholder">Loading navigation...</div>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <button id="themeToggle" class="theme-toggle-btn">
+          <span class="mode-icon">☀</span>
+          <span class="mode-text">Light Mode</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Sidebar Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="content-header">
+        <button class="mobile-toggle" id="mobileToggleBtn" aria-label="Open navigation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        
+        <div class="breadcrumb" id="breadcrumb">
+          <span class="crumb">wiki</span>
+          <span class="crumb-separator">/</span>
+          <span class="crumb active" id="currentCrumb">index.md</span>
+        </div>
+
+        <!-- Material Search Bar with Floating Dropdown -->
+        <div class="header-search-container">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            <input type="text" id="globalSearchInput" placeholder="Search pages, tags, content..." autocomplete="off">
+            <button id="clearSearchBtn" class="clear-search-btn" aria-label="Clear search" style="display: none;">✕</button>
+          </div>
+          <div id="searchDropdown" class="search-dropdown" style="display: none;"></div>
+        </div>
+        
+        <div class="meta-info">
+          <a href="#" id="rawLink" target="_blank" class="raw-btn">
+            <svg class="raw-icon" viewBox="0 0 24 24" width="14" height="14">
+              <path fill="currentColor" d="M12.89 3L14.85 3.4L11.11 21L9.15 20.6L12.89 3M19.59 12L16 8.41V5.58L22.42 12L16 18.41V15.58L19.59 12M1.58 12L8 5.58V8.41L4.41 12L8 15.58V18.41L1.58 12Z"/>
+            </svg>
+            Raw MD
+          </a>
+        </div>
+      </header>
+      
+      <div class="content-wrapper">
+        <article class="markdown-body" id="content">
+          <div class="loading-placeholder">Loading wiki content...</div>
+        </article>
+      </div>
+    </main>
+    
+  </div>
+
+  <!-- Engine Scripts -->
+  <script src="llmwiki/llmwiki.js"></script>
+</body>
+</html>

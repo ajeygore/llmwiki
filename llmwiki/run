@@ -1,0 +1,5 @@
+#!/bin/bash
+# LLMWiki Server Run wrapper calling run.py
+
+ENGINE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+python3 "$ENGINE_DIR/run.py" "$@"

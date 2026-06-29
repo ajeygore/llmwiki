@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""
+LLMWiki Command Line Search Utility
+Recursively searches local markdown files in the wiki directory.
+Usage: ./llmwiki/search <query>
+"""
+
+import os
+import sys
+import re
+
+# Color codes for clean CLI formatting
+BLUE = '\033[94m'
+GREEN = '\033[92m'
+YELLOW = '\033[93m'
+RED = '\033[91m'
+BOLD = '\033[1m'
+END = '\033[0m'
+
+def print_help():
+    print(f"{BOLD}LLMWiki Search CLI{END}")
+    print("Usage: ./llmwiki/search <query_term>")
+    print("Example: ./llmwiki/search started")
+
+def search_wiki(query):
+    # Locate the wiki directory (relative to the engine directory)
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    wiki_dir = os.path.abspath(os.path.join(script_dir, '..', 'wiki'))
+    
+    if not os.path.isdir(wiki_dir):
+        print(f"{RED}Error: Wiki directory not found at {wiki_dir}{END}", file=sys.stderr)
+        sys.exit(1)
+        
+    query_lower = query.lower()
+    matches_found = 0
+    
+    print(f"{BLUE}Searching for '{query}' in {wiki_dir}...{END}\n")
+    
+    for root, dirs, files in os.walk(wiki_dir):
+        for file in files:
+            if not file.endswith('.md'):
+                continue
+                
+            file_path = os.path.join(root, file)
+            rel_path = os.path.relpath(file_path, os.path.join(wiki_dir, '..'))
+            
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+            except Exception as e:
+                print(f"{RED}Warning: Could not read {rel_path} ({e}){END}")
+                continue
+                
+            # Check filename match
+            file_matched = False
+            if query_lower in file.lower():
+                print(f"{GREEN}{BOLD}[File Match]{END} {BOLD}{rel_path}{END}")
+                file_matched = True
+                matches_found += 1
+                
+            # Check line matches
+            for line_no, line in enumerate(lines, 1):
+                if query_lower in line.lower():
+                    # Highlight the matching keyword in the output line
+                    highlighted_line = re.sub(
+                        re.escape(query),
+                        lambda m: f"{YELLOW}{BOLD}{m.group(0)}{END}",
+                        line.strip(),
+                        flags=re.IGNORECASE
+                    )
+                    
+                    # Print match details
+                    if not file_matched:
+                        print(f"{GREEN}{rel_path}{END}:{line_no}: {highlighted_line}")
+                    else:
+                        print(f"  Line {line_no}: {highlighted_line}")
+                        
+                    matches_found += 1
+                    
+    print(f"\n{BLUE}Search finished. Found {matches_found} match(es).{END}")
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print_help()
+        sys.exit(1)
+        
+    query_term = ' '.join(sys.argv[1:])
+    search_wiki(query_term)
