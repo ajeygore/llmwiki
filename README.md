@@ -5,7 +5,7 @@ LLMWiki is a lightweight, zero-build personal knowledge base engine that bridges
 This project is a complete implementation of Andrej Karpathy's [LLM Wiki architecture design pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).
 
 ### 🛠️ About Setup
-Setting up a new wiki workspace is straightforward. Because the LLMWiki engine is designed to live inside target workspaces as an external dependent folder (`/llmwiki/`), you simply register the engine as a Git Submodule inside any empty directory, and then run the bootstrapping script (or delegate it to an AI assistant). The script populates the workspace root with standard agent manuals (`agents.md`), the index template (`index.html`), and initial markdown directory schemas (`/wiki/`) ready for content population.
+Setting up a new wiki workspace is straightforward. Because the LLMWiki engine is designed to live inside target workspaces as a self-contained `/llmwiki/` folder, you simply add the engine inside any empty directory — by **vendoring** it (a shallow clone with its `.git` removed) or as a **git submodule** — and then run the bootstrapping script (or delegate it to an AI assistant). The script populates the workspace root with standard agent manuals (`agents.md`), the index template (`index.html`), and initial markdown directory schemas (`/wiki/`) ready for content population.
 
 ---
 
@@ -14,7 +14,7 @@ Setting up a new wiki workspace is straightforward. Because the LLMWiki engine i
 LLMWiki separates your **agent workspace configs** (memories, rules, custom skills) from your **active project source code**. This ensures a clean project repo while keeping all agent collective knowledge shareable in a separate wiki repository.
 
 ### The Lifecycle:
-1. **Set the Engine**: Add `llmwiki` as a dependent git submodule in an empty wiki repository.
+1. **Set the Engine**: Add the `llmwiki` engine into an empty wiki repository — either **vendor** it (clone + drop `.git`) or add it as a **git submodule**.
 2. **Launch & Browse**: Run the local server (`./llmwiki/run`) to start the browser dashboard.
 3. **Connect Your Coding Agent**: Open your main project work directory in your AI coding workspace, and paste the bootstrap welcome prompt.
 4. **Link Workspace Rules**: Tell your coding agent in the project workspace configuration (`AGENTS.md` or `.agents/AGENTS.md`) that instead of local project-specific instruction folders and ad-hoc files, **all rules, context, and skills are maintained centrally in your wiki repository**.
@@ -55,15 +55,25 @@ You can bootstrap a brand new wiki repository automatically using an AI coding a
    https://raw.githubusercontent.com/ajeygore/llmwiki/main/setup.md
    Follow its instructions to initialize the LLMWiki repository inside this empty directory.
    ```
-3. The assistant will read the manual, configure the engine submodule, run the setup script, and guide you to commit the files.
+3. The assistant will read the manual, add the engine (vendored or as a submodule), run the setup script, and guide you to commit the files.
 
 ### Option B: Manual Setup
 
-#### Step 1: Add the Engine Submodule
-Navigate to the root of your wiki repository and run:
+#### Step 1: Add the Engine
+Place the engine inside a `llmwiki/` folder at the root of your wiki workspace. Pick **one** of the two methods below.
+
+**Option A — Vendor the engine (recommended; works everywhere, even if your workspace isn't a git repo):**
+```bash
+git clone --depth 1 https://github.com/ajeygore/llmwiki.git llmwiki
+rm -rf llmwiki/.git
+```
+The engine becomes plain files committed into your own repo, so teammates get it on a normal `git clone`. Update later by deleting `llmwiki/` and re-running the two commands.
+
+**Option B — Git submodule (keeps the engine linked for easy upstream updates; requires your workspace to already be a git repo):**
 ```bash
 git submodule add https://github.com/ajeygore/llmwiki.git llmwiki
 ```
+Note: teammates must clone with `git clone --recursive` (or run `git submodule update --init` afterward).
 
 #### Step 2: Bootstrap the Directory Structure
 Run the bootstrapping script to copy the core HTML viewer, agent schemas, and markdown page skeletons to the parent repository root.
@@ -116,8 +126,14 @@ AI agents (and humans) can quickly query the local knowledge database directly f
 
 ## 🔄 Fetching Engine Updates
 
-Since the engine is registered as a Git submodule, you can easily pull down new features, UI layouts, or search fixes without modifying your wiki pages:
+Pull down new features, UI layouts, or search fixes without touching your wiki pages. How you update depends on how you added the engine:
+
+**If you vendored it (Option A):** replace the folder with a fresh copy —
 ```bash
-# Fetch and merge updates from the remote engine repo
+rm -rf llmwiki && git clone --depth 1 https://github.com/ajeygore/llmwiki.git llmwiki && rm -rf llmwiki/.git
+```
+
+**If you added it as a submodule (Option B):** fetch and merge from the remote engine repo —
+```bash
 git submodule update --remote --merge
 ```

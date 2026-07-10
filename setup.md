@@ -2,16 +2,23 @@
 
 You are an AI coding assistant helping the user bootstrap a new personal knowledge base in this empty repository. Please follow these steps to initialize the LLMWiki:
 
-## 1. Add the Engine Submodule
-You must place the engine repository at `https://github.com/ajeygore/llmwiki.git` inside a folder named `llmwiki/` at the root of the user's workspace.
-- If the current workspace is a Git repository, add it as a submodule:
-  ```bash
-  git submodule add https://github.com/ajeygore/llmwiki.git llmwiki
-  ```
-- If it is not a Git repository, clone it:
-  ```bash
-  git clone https://github.com/ajeygore/llmwiki.git llmwiki
-  ```
+## 1. Add the Engine
+Place the engine repository (`https://github.com/ajeygore/llmwiki.git`) inside a folder named `llmwiki/` at the root of the user's workspace. There are two ways to do this — **default to Option A (vendoring)**, which works everywhere. Only use Option B if the workspace is already a Git repository and the user explicitly wants the engine kept as a linked submodule.
+
+### Option A — Vendor the engine (recommended; works everywhere)
+Clone the engine and remove its `.git` metadata so the files become a plain, committed part of the user's wiki repo:
+```bash
+git clone --depth 1 https://github.com/ajeygore/llmwiki.git llmwiki
+rm -rf llmwiki/.git
+```
+This works whether or not the workspace is a Git repository, and teammates get the engine automatically on a normal `git clone` — no extra steps. To update the engine later, delete `llmwiki/` and re-run the two commands above.
+
+### Option B — Git submodule (linked, for pulling upstream engine updates)
+Only if the workspace is already a Git repository:
+```bash
+git submodule add https://github.com/ajeygore/llmwiki.git llmwiki
+```
+Warn the user that teammates must clone with `git clone --recursive` (or run `git submodule update --init` after cloning), and that engine updates are pulled later with `git submodule update --remote --merge`.
 
 ## 2. Run the Setup Script
 Run the bootstrapping script to copy the entry template, agent manuals, and page skeletons from the engine to the workspace root:
