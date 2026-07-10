@@ -29,6 +29,8 @@ The agent will organize them into `wiki/context.md`, `agents.md`, and the `wiki/
 
 ## 📁 Repository Layout
 
+> **Note:** This repository *is* the engine — its root contains the scripts (`setup.py`/`setup.sh`/`setup.bat`, `run`, `search`, `llmwiki.js`, `style.css`) that get cloned into your workspace's `/llmwiki/` folder. The layout below describes the **wiki workspace** that `setup.py` generates around the engine, not this repo.
+
 - `/raw/` — Immutable source documents (articles, PDFs, transcriptions) to be processed.
 - `/wiki/` — Structured, LLM-maintained Markdown pages.
 - `/wiki/index.md` — The dynamic index catalog parsing sidebar links and groups.
