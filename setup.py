@@ -373,6 +373,22 @@ rm -rf llmwiki && git clone --depth 1 https://github.com/ajeygore/llmwiki.git ll
 ```bash
 git submodule update --remote --merge
 ```
+
+---
+
+## 🌐 Publish to GitHub Pages (optional)
+
+The viewer is fully client-side (relative `fetch()` calls + hash-based routing), so your wiki can be hosted read-only on GitHub Pages with no code changes. A deploy workflow was generated at `.github/workflows/pages.yml`. To turn it on:
+
+1. Push this repository to GitHub. The engine must be **committed** — vendor it (Option A), or the workflow will pull it during checkout if it's a submodule (Option B).
+2. In the repo, open **Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**.
+3. Every push to `main` publishes to `https://<user>.github.io/<repo>/`.
+
+Notes:
+- The Actions flow serves your `.md` files verbatim (no Jekyll). A `.nojekyll` marker is also included so the simpler *Deploy from a branch* option works too.
+- Pages publishes **everything** in the repo, including `raw/`. Don't commit private source material you don't want public (or use a private repo, which needs a paid plan for Pages).
+- A page only appears in the sidebar/catalog if it's linked from `wiki/index.md`; unlinked files are still reachable by direct URL but won't be listed.
+- Pages is a read-only view — agents keep editing the Markdown locally via git as usual.
 """
     create_file_if_missing(readme_path, readme_content, "Quickstart README")
     
@@ -598,7 +614,56 @@ Place long-form API specifications, database schemas, library guides, or coding 
 This keeps the main `SKILL.md` instruction file short and token-efficient, while allowing agents to load references on-demand when performing skill tasks.
 """
     create_file_if_missing(skill_ref_path, skill_ref_content, "example skill references readme")
-    
+
+    # 14. Create .nojekyll so GitHub Pages serves raw .md files verbatim
+    #     (branch-deploy runs Jekyll by default, which would convert/omit .md).
+    nojekyll_path = os.path.join(wiki_root, '.nojekyll')
+    create_file_if_missing(nojekyll_path, "", "GitHub Pages .nojekyll marker")
+
+    # 15. Create a GitHub Actions workflow to publish the wiki to GitHub Pages.
+    #     The Actions deploy flow bypasses Jekyll entirely and checks out
+    #     submodules, so it works whether the engine is vendored or a submodule.
+    pages_workflow_path = os.path.join(wiki_root, '.github', 'workflows', 'pages.yml')
+    pages_workflow_content = """name: Deploy LLMWiki to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; don't cancel an in-progress run.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive   # pulls the engine when added as a submodule
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'               # publish the whole wiki workspace as-is
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+"""
+    create_file_if_missing(pages_workflow_path, pages_workflow_content, "GitHub Pages deploy workflow")
+
     print("-" * 50)
     print(f"✅ {wiki_name} Repository Skeleton Ready!")
     print("💡 Start your server by running: ./llmwiki/run")

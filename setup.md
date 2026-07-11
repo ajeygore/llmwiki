@@ -46,3 +46,4 @@ Once setup is complete, output a clear message containing:
    - On macOS/Linux: `./llmwiki/run`
    - On Windows: `llmwiki\run.bat`
 3. **Agent Integration**: Tell them to open the wiki dashboard (typically on `http://localhost:8001`), locate the welcome page at `wiki/welcome.md`, copy the **AI Agent Setup Prompt**, and paste it into their coding agent chat to begin auto-populating the wiki!
+4. **Optional — Publish to GitHub Pages**: Mention that setup also generated `.github/workflows/pages.yml` and a `.nojekyll` marker. If they push this repo to GitHub and set **Settings → Pages → Source** to **GitHub Actions**, the wiki is hosted read-only at `https://<user>.github.io/<repo>/`. Warn that Pages publishes everything, including `raw/`, so they should not commit private sources to a public repo.
