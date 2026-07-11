@@ -137,3 +137,19 @@ rm -rf llmwiki && git clone --depth 1 https://github.com/ajeygore/llmwiki.git ll
 ```bash
 git submodule update --remote --merge
 ```
+
+---
+
+## 🌐 Publish to GitHub Pages (optional)
+
+The viewer is fully client-side — it loads Markdown with relative `fetch()` calls and routes purely via the URL hash — so a wiki workspace can be hosted read-only on GitHub Pages with **no code changes**. `setup.py` generates a ready-to-use deploy workflow at `.github/workflows/pages.yml` (plus a `.nojekyll` marker) in every new workspace. To turn it on:
+
+1. Push your wiki workspace repo to GitHub. Make sure the engine is **committed** — vendor it (Option A), or the workflow's `submodules: recursive` checkout will pull it (Option B).
+2. In the repo, open **Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**.
+3. Each push to `main` publishes to `https://<user>.github.io/<repo>/`.
+
+**Notes**
+- The Actions flow serves `.md` files verbatim (Jekyll is bypassed); the `.nojekyll` marker also makes the simpler *Deploy from a branch* option work.
+- Pages publishes **everything** in the repo, including `raw/` — don't commit private source material you don't want public (or use a private repo, which requires a paid plan for Pages).
+- A page appears in the sidebar/catalog only if it's linked from `wiki/index.md`; unlinked files remain reachable by direct URL but aren't listed.
+- Pages is read-only; agents continue editing the Markdown locally via git.
