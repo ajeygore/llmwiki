@@ -368,6 +368,13 @@ function highlightActiveSidebarItem(pagePath) {
 function handleRoute() {
   const hash = window.location.hash;
   
+  if (hash === '#/graph' || hash === '#graph') {
+    renderGraphView();
+    document.body.classList.remove('sidebar-open');
+    return;
+  }
+
+  highlightGraphNav(false);
   if (hash.startsWith('#/tag/')) {
     const tagName = decodeURIComponent(hash.slice(6));
     renderTagView(tagName);
@@ -933,6 +940,161 @@ function setupHeaderSearch() {
   });
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Graph View — an Obsidian-style force-directed map of pages and their links.
+// Self-contained: injects its own sidebar entry, lazy-loads d3 from CDN on
+// first open, and reuses extractMdLinks / resolveRelativePath / parseFrontmatter
+// / getPageTitle. No index.html changes needed, so any wiki gets it on an
+// engine update.
+// ─────────────────────────────────────────────────────────────────────────
+const D3_CDN = 'https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js';
+
+function loadD3() {
+  if (window.d3) return Promise.resolve(window.d3);
+  if (!window._d3Loading) {
+    window._d3Loading = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = D3_CDN;
+      s.onload = () => resolve(window.d3);
+      s.onerror = () => reject(new Error('could not load d3 from CDN'));
+      document.head.appendChild(s);
+    });
+  }
+  return window._d3Loading;
+}
+
+// BFS-crawl from the index, collecting pages (nodes) and their links (edges).
+async function buildGraphData() {
+  const nodes = new Map();
+  const edges = [];
+  const seen = new Set();
+  const queue = [SIDEBAR_SOURCE];
+  const ensure = (path, title) => {
+    if (!nodes.has(path)) nodes.set(path, { id: path, title: title || getPageTitle(path) });
+  };
+  while (queue.length) {
+    const path = queue.shift();
+    if (seen.has(path)) continue;
+    seen.add(path);
+    let text;
+    try {
+      const res = await fetch(path);
+      if (!res.ok) continue;
+      text = await res.text();
+    } catch (e) { continue; }
+    const { frontmatter } = parseFrontmatter(text);
+    ensure(path, frontmatter && frontmatter.title);
+    for (const link of extractMdLinks(text)) {
+      const target = resolveRelativePath(path, link.path);
+      ensure(target, link.text);
+      edges.push({ source: path, target });
+      if (!seen.has(target)) queue.push(target);
+    }
+  }
+  return { nodes: [...nodes.values()], links: edges };
+}
+
+async function renderGraphView() {
+  const content = document.getElementById('content');
+  if (!content) return;
+  highlightGraphNav(true);
+  content.innerHTML = '<div class="graph-status">Building graph…</div>';
+
+  let d3, data;
+  try {
+    [d3, data] = await Promise.all([loadD3(), buildGraphData()]);
+  } catch (e) {
+    content.innerHTML = `<div class="graph-status graph-error">Could not load the graph (${e.message}).</div>`;
+    return;
+  }
+  if (!data.nodes.length) {
+    content.innerHTML = '<div class="graph-status">No pages to graph yet.</div>';
+    return;
+  }
+
+  content.innerHTML = `
+    <div class="graph-header">
+      <h1>Graph</h1>
+      <span class="graph-meta">${data.nodes.length} pages · ${data.links.length} links · drag to move, scroll to zoom, click a node to open</span>
+    </div>
+    <div id="graphContainer"><svg id="graphSvg"></svg></div>`;
+
+  const container = document.getElementById('graphContainer');
+  const width = container.clientWidth || 800;
+  const height = container.clientHeight || 600;
+
+  // Degree (node size) + neighbour sets (hover highlight) — computed while
+  // links still hold string endpoints, before d3.forceLink mutates them.
+  const degree = {};
+  const neighbours = {};
+  data.links.forEach(l => {
+    degree[l.source] = (degree[l.source] || 0) + 1;
+    degree[l.target] = (degree[l.target] || 0) + 1;
+    (neighbours[l.source] = neighbours[l.source] || new Set()).add(l.target);
+    (neighbours[l.target] = neighbours[l.target] || new Set()).add(l.source);
+  });
+
+  const svg = d3.select('#graphSvg')
+    .attr('width', width).attr('height', height)
+    .attr('viewBox', [0, 0, width, height]);
+  const rootG = svg.append('g');
+  svg.call(d3.zoom().scaleExtent([0.2, 4]).on('zoom', (ev) => rootG.attr('transform', ev.transform)));
+
+  const sim = d3.forceSimulation(data.nodes)
+    .force('link', d3.forceLink(data.links).id(d => d.id).distance(80))
+    .force('charge', d3.forceManyBody().strength(-240))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collide', d3.forceCollide(20));
+
+  const link = rootG.append('g').attr('class', 'graph-links')
+    .selectAll('line').data(data.links).join('line').attr('class', 'graph-link');
+
+  const node = rootG.append('g').attr('class', 'graph-nodes')
+    .selectAll('g').data(data.nodes).join('g').attr('class', 'graph-node').style('cursor', 'pointer');
+
+  node.append('circle').attr('r', d => 5 + Math.min(degree[d.id] || 0, 10));
+  node.append('text').attr('class', 'graph-label').attr('x', 11).attr('dy', '0.32em').text(d => d.title);
+
+  node.on('click', (ev, d) => { window.location.hash = '#/' + d.id; });
+  node.on('mouseover', (ev, d) => {
+    const near = neighbours[d.id] || new Set();
+    node.classed('dim', n => n.id !== d.id && !near.has(n.id));
+    link.classed('dim', l => l.source.id !== d.id && l.target.id !== d.id)
+        .classed('hot', l => l.source.id === d.id || l.target.id === d.id);
+  }).on('mouseout', () => {
+    node.classed('dim', false);
+    link.classed('dim', false).classed('hot', false);
+  });
+
+  node.call(d3.drag()
+    .on('start', (ev, d) => { if (!ev.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+    .on('drag', (ev, d) => { d.fx = ev.x; d.fy = ev.y; })
+    .on('end', (ev, d) => { if (!ev.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+  sim.on('tick', () => {
+    link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+    node.attr('transform', d => `translate(${d.x},${d.y})`);
+  });
+}
+
+// Add a "Graph View" entry to the top of the sidebar (once).
+function injectGraphNav() {
+  const nav = document.getElementById('sidebarNav');
+  if (!nav || document.getElementById('graphNavLink')) return;
+  const a = document.createElement('a');
+  a.id = 'graphNavLink';
+  a.href = '#/graph';
+  a.className = 'graph-nav-link';
+  a.innerHTML = '<span class="graph-nav-icon">🕸️</span> Graph View';
+  nav.prepend(a);
+}
+
+function highlightGraphNav(active) {
+  const a = document.getElementById('graphNavLink');
+  if (a) a.classList.toggle('active', !!active);
+}
+
 // App Initialization
 document.addEventListener('DOMContentLoaded', async () => {
   setupTheme();
@@ -940,7 +1102,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // Load sidebar first to establish navigation
   await loadSidebar();
-  
+
+  // Add the Graph View entry to the sidebar
+  injectGraphNav();
+
   // Setup search bar in sidebar header filter
   setupSearch();
   
