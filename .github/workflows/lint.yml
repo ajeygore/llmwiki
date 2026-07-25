@@ -1,0 +1,18 @@
+name: Lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Test the lint tool against fixtures
+        run: python3 tests/test_lint.py
+      - name: Syntax-check engine scripts
+        run: python3 -m py_compile lint search run.py setup.py

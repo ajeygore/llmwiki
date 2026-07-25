@@ -122,6 +122,18 @@ AI agents (and humans) can quickly query the local knowledge database directly f
   llmwiki\search.bat "<query_term>"
   ```
 
+### Command Line Lint CLI
+Health-check the wiki before committing. `lint` reports broken links, orphan pages, missing/invalid frontmatter, and malformed `log.md` entries.
+
+```bash
+./llmwiki/lint            # human-readable report, exits 1 on errors (broken links)
+./llmwiki/lint --strict   # also fail on warnings (orphans, frontmatter, log format)
+./llmwiki/lint --quiet    # only problems + summary
+./llmwiki/lint <wiki-dir> # lint a specific wiki/ directory
+```
+
+It exits non-zero when it finds errors, so it fits straight into CI — e.g. run `./llmwiki/lint` on every push to keep the wiki honest. The engine's own suite runs `python3 tests/test_lint.py` against `tests/fixture_good` and `tests/fixture_bad`.
+
 ---
 
 ## 🔄 Fetching Engine Updates

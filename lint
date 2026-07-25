@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+"""
+LLMWiki Command Line Lint Utility
+
+Health-checks an LLM-maintained wiki for the issues the agent Lint Flow cares
+about: broken links, orphan pages, missing/invalid frontmatter, and malformed
+log entries.
+
+Usage:
+    ./llmwiki/lint [WIKI_DIR] [--strict] [--quiet]
+
+WIKI_DIR   Path to the `wiki/` directory to check. Defaults to the wiki next to
+           the engine (../wiki), matching ./llmwiki/search.
+--strict   Treat warnings as failures too (exit 1 on any warning).
+--quiet    Only print problems and the summary, not the per-check headers.
+
+Exit code: 0 when clean (no errors; no warnings under --strict), else 1.
+"""
+
+import os
+import re
+import sys
+
+BLUE = "\033[94m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+RED = "\033[91m"
+BOLD = "\033[1m"
+END = "\033[0m"
+
+# Structural pages: no page-frontmatter, never orphans (they are entry points).
+STRUCTURAL = {"index.md", "log.md", "welcome.md", "getting-started.md"}
+PAGE_FRONTMATTER = ("title", "summary")       # normal content pages
+SKILL_FRONTMATTER = ("name", "description")   # skills/*/SKILL.md manifests
+
+FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
+# [text](path.md) or [text](path.md#anchor) — capture the .md target only.
+MD_LINK_RE = re.compile(r"\[[^\]]*\]\(\s*([^)\s]+?\.md)(?:#[^)]*)?\s*\)")
+# [[Wikilink]] or [[Wikilink|alias]]
+WIKILINK_RE = re.compile(r"\[\[([^\]|#]+?)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]")
+LOG_ENTRY_RE = re.compile(r"^## \[\d{4}-\d{2}-\d{2}\]\s+\w+\s+\|\s+.+")
+
+
+def resolve_wiki_dir(argv_path):
+    if argv_path:
+        wiki_dir = os.path.abspath(argv_path)
+    else:
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        wiki_dir = os.path.abspath(os.path.join(script_dir, "..", "wiki"))
+    if not os.path.isdir(wiki_dir):
+        print(f"{RED}Error: Wiki directory not found at {wiki_dir}{END}", file=sys.stderr)
+        sys.exit(1)
+    return wiki_dir
+
+
+def all_pages(wiki_dir):
+    """Relative-to-wiki_dir paths of every .md file, e.g. 'reviews/x.md'."""
+    pages = []
+    for root, _dirs, files in os.walk(wiki_dir):
+        for f in files:
+            if f.endswith(".md"):
+                pages.append(os.path.relpath(os.path.join(root, f), wiki_dir))
+    return sorted(pages)
+
+
+def read(path):
+    with open(path, "r", encoding="utf-8") as fh:
+        return fh.read()
+
+
+def parse_frontmatter(text):
+    m = FRONTMATTER_RE.match(text)
+    if not m:
+        return None
+    fm = {}
+    for line in m.group(1).splitlines():
+        if ":" in line:
+            k, v = line.split(":", 1)
+            fm[k.strip()] = v.strip()
+    return fm
+
+
+def is_external(target):
+    return target.startswith(("http://", "https://", "//", "mailto:", "#"))
+
+
+def is_skill_support(page):
+    """Support files under a skill (references/, scripts/) — not nav pages."""
+    return page.startswith("skills" + os.sep) and os.path.basename(page) != "SKILL.md"
+
+
+def is_skill_manifest(page):
+    return page.startswith("skills" + os.sep) and os.path.basename(page) == "SKILL.md"
+
+
+def iter_links(text):
+    for m in MD_LINK_RE.finditer(text):
+        raw = m.group(1)
+        if not is_external(raw):
+            yield ("md", raw)
+    for m in WIKILINK_RE.finditer(text):
+        yield ("wiki", m.group(1).strip())
+
+
+def main():
+    args = sys.argv[1:]
+    strict = "--strict" in args
+    quiet = "--quiet" in args
+    positional = [a for a in args if not a.startswith("--")]
+    wiki_dir = resolve_wiki_dir(positional[0] if positional else None)
+
+    pages = all_pages(wiki_dir)
+    page_set = set(pages)
+    by_basename = {os.path.basename(p).lower(): p for p in pages}
+
+    errors = []
+    warnings = []
+    inbound = {p: 0 for p in pages}
+
+    def header(title):
+        if not quiet:
+            print(f"\n{BOLD}{BLUE}{title}{END}")
+
+    # ── Broken links (ERROR) + inbound tally for orphan detection ──
+    # A link is broken only if it resolves to a file that does not exist on
+    # disk. Links may legitimately point outside wiki/ (e.g. ../agents.md);
+    # those count as valid but not toward inbound (they're not wiki pages).
+    header("Links")
+    for page in pages:
+        page_dir_abs = os.path.dirname(os.path.join(wiki_dir, page))
+        for kind, raw in iter_links(read(os.path.join(wiki_dir, page))):
+            if kind == "md":
+                target_abs = os.path.normpath(os.path.join(page_dir_abs, raw))
+                if not os.path.isfile(target_abs):
+                    errors.append(f"{page}: broken link -> {raw}")
+                    print(f"  {RED}BROKEN{END} {page} -> {raw}")
+                    continue
+                target_rel = os.path.relpath(target_abs, wiki_dir)
+                if target_rel in page_set and target_rel != page:
+                    inbound[target_rel] += 1
+            else:  # wikilink, resolved by basename within the wiki
+                key = raw if raw.endswith(".md") else raw + ".md"
+                target_rel = by_basename.get(os.path.basename(key).lower())
+                if target_rel is None:
+                    errors.append(f"{page}: broken wikilink -> [[{raw}]]")
+                    print(f"  {RED}BROKEN{END} {page} -> [[{raw}]]")
+                elif target_rel != page:
+                    inbound[target_rel] += 1
+
+    # ── Orphan pages (WARN) ── skills are reached via the agent, not the nav.
+    header("Orphans")
+    for page in pages:
+        if os.path.basename(page) in STRUCTURAL or page.startswith("skills" + os.sep):
+            continue
+        if inbound.get(page, 0) == 0:
+            warnings.append(f"{page}: orphan (no inbound links, not in index.md)")
+            print(f"  {YELLOW}ORPHAN{END} {page}")
+
+    # ── Frontmatter (WARN) ──
+    header("Frontmatter")
+    for page in pages:
+        base = os.path.basename(page)
+        if base in STRUCTURAL or is_skill_support(page):
+            continue
+        required = SKILL_FRONTMATTER if is_skill_manifest(page) else PAGE_FRONTMATTER
+        fm = parse_frontmatter(read(os.path.join(wiki_dir, page)))
+        if fm is None:
+            warnings.append(f"{page}: missing YAML frontmatter")
+            print(f"  {YELLOW}NO-FRONTMATTER{END} {page}")
+            continue
+        missing = [k for k in required if not fm.get(k)]
+        if missing:
+            warnings.append(f"{page}: frontmatter missing {', '.join(missing)}")
+            print(f"  {YELLOW}FRONTMATTER{END} {page} missing: {', '.join(missing)}")
+
+    # ── Log format (WARN) ──
+    header("Log format")
+    log_path = os.path.join(wiki_dir, "log.md")
+    if os.path.isfile(log_path):
+        for n, line in enumerate(read(log_path).splitlines(), 1):
+            if line.startswith("## ") and not LOG_ENTRY_RE.match(line):
+                warnings.append(f"log.md:{n}: entry not in `## [YYYY-MM-DD] action | ...` format")
+                print(f"  {YELLOW}LOG-FMT{END} log.md:{n}: {line.strip()[:60]}")
+
+    # ── Summary ──
+    print(f"\n{BOLD}Lint summary:{END} "
+          f"{RED}{len(errors)} error(s){END}, "
+          f"{YELLOW}{len(warnings)} warning(s){END} "
+          f"across {len(pages)} page(s).")
+
+    failed = bool(errors) or (strict and bool(warnings))
+    if not failed:
+        print(f"{GREEN}✓ wiki is healthy{'' if not warnings else ' (warnings only)'}{END}")
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
