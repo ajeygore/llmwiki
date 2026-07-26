@@ -947,8 +947,8 @@ html, body {
 
 #graphContainer {
   width: 100%;
-  height: calc(100vh - var(--header-height) - 140px);
-  min-height: 420px;
+  height: 70vh;
+  min-height: 480px;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   background: var(--bg-content);
@@ -957,21 +957,27 @@ html, body {
 #graphSvg { width: 100%; height: 100%; display: block; cursor: grab; }
 #graphSvg:active { cursor: grabbing; }
 
-.graph-link { stroke: var(--border-color); stroke-width: 1.2px; }
-.graph-link.hot { stroke: var(--accent-color); stroke-width: 2px; }
-.graph-link.dim { stroke-opacity: 0.12; }
+.graph-link { stroke: var(--border-color); stroke-width: 1px; stroke-opacity: 0.55; }
+.graph-link.hot { stroke: var(--accent-color); stroke-width: 1.5px; stroke-opacity: 1; }
+.graph-link.dim { stroke-opacity: 0.08; }
 
 .graph-node circle {
   fill: var(--accent-color);
   stroke: var(--bg-content);
-  stroke-width: 1.5px;
+  stroke-width: 1px;
   transition: fill var(--transition-fast);
 }
 .graph-node:hover circle { fill: var(--accent-hover); }
 .graph-node text {
   fill: var(--text-secondary);
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: 10px;
   pointer-events: none;
+  /* Halo of the page background so labels stay legible over edges/nodes. */
+  paint-order: stroke;
+  stroke: var(--bg-content);
+  stroke-width: 3px;
+  stroke-linejoin: round;
 }
-.graph-node.dim { opacity: 0.25; transition: opacity var(--transition-fast); }
+.graph-node.dim { opacity: 0.22; transition: opacity var(--transition-fast); }
+.graph-node.dim text { opacity: 0.5; }
