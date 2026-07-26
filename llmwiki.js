@@ -1020,9 +1020,12 @@ async function renderGraphView() {
     <div id="graphContainer"><svg id="graphSvg"></svg></div>`;
 
   const container = document.getElementById('graphContainer');
-  const width = container.clientWidth || 800;
-  const height = container.clientHeight || 600;
+  // Robust sizing — never depend on the container reporting a usable height
+  // (some layouts give a freshly-inserted flex child 0px); clamp to a floor.
+  const width = Math.max(container.clientWidth || 0, 600);
+  const height = Math.max(container.clientHeight || 0, 480);
 
+  try {
   // Degree (node size) + neighbour sets (hover highlight) — computed while
   // links still hold string endpoints, before d3.forceLink mutates them.
   const degree = {};
@@ -1040,11 +1043,13 @@ async function renderGraphView() {
   const rootG = svg.append('g');
   svg.call(d3.zoom().scaleExtent([0.2, 4]).on('zoom', (ev) => rootG.attr('transform', ev.transform)));
 
+  const radius = d => 3 + Math.min(Math.sqrt(degree[d.id] || 0) * 1.3, 6);
+
   const sim = d3.forceSimulation(data.nodes)
-    .force('link', d3.forceLink(data.links).id(d => d.id).distance(80))
-    .force('charge', d3.forceManyBody().strength(-240))
+    .force('link', d3.forceLink(data.links).id(d => d.id).distance(70))
+    .force('charge', d3.forceManyBody().strength(-200))
     .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('collide', d3.forceCollide(20));
+    .force('collide', d3.forceCollide(d => radius(d) + 6));
 
   const link = rootG.append('g').attr('class', 'graph-links')
     .selectAll('line').data(data.links).join('line').attr('class', 'graph-link');
@@ -1052,8 +1057,8 @@ async function renderGraphView() {
   const node = rootG.append('g').attr('class', 'graph-nodes')
     .selectAll('g').data(data.nodes).join('g').attr('class', 'graph-node').style('cursor', 'pointer');
 
-  node.append('circle').attr('r', d => 5 + Math.min(degree[d.id] || 0, 10));
-  node.append('text').attr('class', 'graph-label').attr('x', 11).attr('dy', '0.32em').text(d => d.title);
+  node.append('circle').attr('r', radius);
+  node.append('text').attr('class', 'graph-label').attr('x', d => radius(d) + 4).attr('dy', '0.32em').text(d => d.title);
 
   node.on('click', (ev, d) => { window.location.hash = '#/' + d.id; });
   node.on('mouseover', (ev, d) => {
@@ -1076,6 +1081,11 @@ async function renderGraphView() {
         .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
     node.attr('transform', d => `translate(${d.x},${d.y})`);
   });
+  } catch (e) {
+    console.error('[graph] render failed', e);
+    const box = document.getElementById('graphContainer');
+    if (box) box.innerHTML = `<div class="graph-status graph-error" style="padding:24px">Graph render failed: ${e && e.message ? e.message : e}</div>`;
+  }
 }
 
 // Add a "Graph View" entry to the top of the sidebar (once).
