@@ -4,6 +4,9 @@ import sys
 import argparse
 from datetime import datetime
 
+DEFAULT_VIEWER_PORT = 8001
+
+
 def create_file_if_missing(filepath, content, description):
     if os.path.exists(filepath):
         print(f"ℹ️  File already exists, skipping: {os.path.basename(filepath)}")
@@ -614,6 +617,18 @@ Place long-form API specifications, database schemas, library guides, or coding 
 This keeps the main `SKILL.md` instruction file short and token-efficient, while allowing agents to load references on-demand when performing skill tasks.
 """
     create_file_if_missing(skill_ref_path, skill_ref_content, "example skill references readme")
+
+    # 14a. Pin this wiki's viewer port. Every wiki defaulting to 8001 means
+    #      whichever starts first wins it and the rest drift to 8002, 8003 —
+    #      with nothing in the URL saying which wiki you actually opened.
+    port_file_path = os.path.join(wiki_root, '.llmwiki-port')
+    port_file_content = f"""{DEFAULT_VIEWER_PORT}  # viewer port for this wiki
+
+Change this if you run more than one wiki on this machine, so each has its own
+port and the URL identifies which wiki you are looking at. Overridden by
+--port or WIKI_PORT.
+"""
+    create_file_if_missing(port_file_path, port_file_content, "viewer port pin")
 
     # 14. Create .nojekyll so GitHub Pages serves raw .md files verbatim
     #     (branch-deploy runs Jekyll by default, which would convert/omit .md).
