@@ -416,7 +416,7 @@ git submodule update --remote --merge
 
 ## 🌐 Publish to GitHub Pages (optional)
 
-The viewer is fully client-side (relative `fetch()` calls + hash-based routing), so your wiki can be hosted read-only on GitHub Pages with no code changes. A deploy workflow was generated at `.github/workflows/pages.yml`. To turn it on:
+The viewer is fully client-side (relative `fetch()` calls + hash-based routing), so your wiki can be hosted read-only on GitHub Pages with no code changes. A deploy workflow was generated at `.github/workflows/pages.yml`, manual-only by default. To turn it on:
 
 1. Push this repository to GitHub. The engine must be **committed** — vendor it (Option A), or the workflow will pull it during checkout if it's a submodule (Option B).
 2. In the repo, open **Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**.
@@ -676,10 +676,19 @@ port and the URL identifies which wiki you are looking at. Overridden by
     pages_workflow_path = os.path.join(wiki_root, '.github', 'workflows', 'pages.yml')
     pages_workflow_content = """name: Deploy LLMWiki to GitHub Pages
 
+# Manual until you turn Pages on. Enable it in Settings -> Pages -> Source:
+# GitHub Actions, then uncomment the push trigger below for deploy-on-merge.
+#
+# It ships manual-only because `actions/configure-pages` fails when Pages is
+# not enabled — so an on-push default would make every commit in a fresh wiki
+# go red, hiding real failures behind a workflow that was never asked for.
+#
+# Before enabling: this publishes the WHOLE workspace, including raw/. Do not
+# turn it on for a public repo holding anything private.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+  # push:
+  #   branches: [main]
 
 permissions:
   contents: read
