@@ -121,9 +121,19 @@ def main():
             webbrowser.open(url)
         threading.Thread(target=open_browser, daemon=True).start()
 
-    handler = http.server.SimpleHTTPRequestHandler
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(('127.0.0.1', port), handler) as httpd:
+    class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
+        """Serve fresh every time. The client is a single-page app that fetches
+        the markdown at runtime, so any browser caching shows stale wiki content.
+        Force no-store on every response so edits appear on a normal reload."""
+        def end_headers(self):
+            self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            self.send_header('Pragma', 'no-cache')
+            self.send_header('Expires', '0')
+            super().end_headers()
+
+    handler = NoCacheHandler
+    http.server.ThreadingHTTPServer.allow_reuse_address = True
+    with http.server.ThreadingHTTPServer(('127.0.0.1', port), handler) as httpd:
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
