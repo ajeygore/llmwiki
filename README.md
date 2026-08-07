@@ -138,17 +138,29 @@ It exits non-zero when it finds errors, so it fits straight into CI — e.g. run
 
 ## 🔄 Fetching Engine Updates
 
-Pull down new features, UI layouts, or search fixes without touching your wiki pages. How you update depends on how you added the engine:
+Pull down new features, UI layouts, or search fixes without touching your wiki pages.
 
-**If you vendored it (Option A):** replace the folder with a fresh copy —
+**Automate with an AI Coding Assistant (recommended):** paste this into your agent's chat inside the wiki workspace:
+```markdown
+Please read the LLMWiki engine upgrade instruction manual from this URL:
+https://raw.githubusercontent.com/ajeygore/llmwiki/main/update.md
+Follow its instructions to upgrade the LLMWiki engine in this workspace to the latest version.
+```
+It detects whether the engine is vendored or a submodule, updates it accordingly, reconciles any root-level template changes (like `index.html`) that a plain folder refresh wouldn't pick up, and logs/commits the change. The same manual ships inside every workspace at `llmwiki/update.md` once the engine is installed.
+
+**Manual — how you update depends on how you added the engine:**
+
+If you vendored it (Option A): replace the folder with a fresh copy —
 ```bash
 rm -rf llmwiki && git clone --depth 1 https://github.com/ajeygore/llmwiki.git llmwiki && rm -rf llmwiki/.git
 ```
 
-**If you added it as a submodule (Option B):** fetch and merge from the remote engine repo —
+If you added it as a submodule (Option B): fetch and merge from the remote engine repo —
 ```bash
 git submodule update --remote --merge
 ```
+
+Either way, note that `setup.py` only creates files that are missing, so upgrades that change `index.html` or `agents.md` won't reach your workspace from a folder refresh alone — see `llmwiki/update.md` for how to reconcile those.
 
 ---
 

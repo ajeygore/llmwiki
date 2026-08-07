@@ -2,6 +2,8 @@
 
 You are an AI coding assistant helping the user bootstrap a new personal knowledge base in this empty repository. Please follow these steps to initialize the LLMWiki:
 
+> **Already have a wiki set up?** This manual is for a brand-new, empty repository. To upgrade an existing wiki's engine to the latest version instead, read `update.md`: `https://raw.githubusercontent.com/ajeygore/llmwiki/main/update.md` (or `llmwiki/update.md` inside the workspace).
+
 ## 1. Add the Engine
 Place the engine repository (`https://github.com/ajeygore/llmwiki.git`) inside a folder named `llmwiki/` at the root of the user's workspace. There are two ways to do this — **default to Option A (vendoring)**, which works everywhere. Only use Option B if the workspace is already a Git repository and the user explicitly wants the engine kept as a linked submodule.
 

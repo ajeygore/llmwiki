@@ -174,7 +174,8 @@ This repository is an **LLMWiki** knowledge base. It is designed to be maintaine
 - `/wiki/index.md` — The content catalog containing links and summaries of all pages. Used by the browser engine to construct the navigation sidebar.
 - `/wiki/log.md` — The chronological action log.
 - `/wiki/skills/` — Custom workspaces-specific skills directory. Each subfolder contains a specialized agent skill.
-- `/llmwiki/` — The LLMWiki rendering engine (JS and CSS assets).
+- `/llmwiki/` — The LLMWiki rendering engine (JS and CSS assets). Never modify files in here.
+- `/llmwiki/update.md` — Instruction manual for upgrading the engine to the latest upstream version.
 - `/index.html` — The customizable HTML template for human browsing.
 - `/agents.md` — This instruction manual.
 
@@ -406,17 +407,29 @@ AI agents (and humans) can quickly query the local knowledge database directly f
 
 ## 🔄 Fetching Engine Updates
 
-Pull down new features, UI layouts, or search fixes without touching your wiki pages. How you update depends on how you added the engine:
+Pull down new features, UI layouts, or search fixes without touching your wiki pages.
 
-**If you vendored it (Option A):** replace the folder with a fresh copy —
+**Automate with an AI Coding Assistant (recommended):** paste this into your agent's chat inside this workspace:
+```markdown
+Please read the LLMWiki engine upgrade instruction manual at llmwiki/update.md
+(or https://raw.githubusercontent.com/ajeygore/llmwiki/main/update.md).
+Follow its instructions to upgrade the LLMWiki engine in this workspace to the latest version.
+```
+It detects whether the engine is vendored or a submodule, updates it accordingly, reconciles any root-level template changes (like `index.html`) that a plain folder refresh wouldn't pick up, and logs/commits the change.
+
+**Manual — how you update depends on how you added the engine:**
+
+If you vendored it (Option A): replace the folder with a fresh copy —
 ```bash
 rm -rf llmwiki && git clone --depth 1 https://github.com/ajeygore/llmwiki.git llmwiki && rm -rf llmwiki/.git
 ```
 
-**If you added it as a submodule (Option B):** fetch and merge from the remote engine repo —
+If you added it as a submodule (Option B): fetch and merge from the remote engine repo —
 ```bash
 git submodule update --remote --merge
 ```
+
+Either way, note that this setup script only creates files that are missing, so upgrades that change `index.html` or `agents.md` won't reach your workspace from a folder refresh alone — see `llmwiki/update.md` for how to reconcile those.
 
 ---
 
