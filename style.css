@@ -314,7 +314,14 @@ html, body {
   font-weight: 600;
 }
 
-.raw-btn {
+.meta-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.raw-btn,
+.print-btn {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -325,10 +332,13 @@ html, body {
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
   transition: all var(--transition-fast);
 }
 
-.raw-btn:hover {
+.raw-btn:hover,
+.print-btn:hover {
   background-color: var(--bg-active);
   color: var(--text-primary);
 }
@@ -981,3 +991,78 @@ html, body {
 }
 .graph-node.dim { opacity: 0.22; transition: opacity var(--transition-fast); }
 .graph-node.dim text { opacity: 0.5; }
+
+/* ==========================================================================
+   Print — output only the current page's rendered content, not app chrome.
+   ========================================================================== */
+@media print {
+  .sidebar,
+  .sidebar-overlay,
+  .content-header,
+  .copy-code-btn {
+    display: none !important;
+  }
+
+  html, body, .app-container, .main-content, .content-wrapper {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  .content-wrapper {
+    padding: 0 !important;
+  }
+
+  .markdown-body {
+    max-width: 100% !important;
+    color: #000 !important;
+  }
+
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3,
+  .markdown-body h4 {
+    color: #000 !important;
+  }
+
+  .markdown-body a {
+    color: #000 !important;
+    text-decoration: underline;
+  }
+
+  .markdown-body pre,
+  .markdown-body code {
+    background: #f5f5f5 !important;
+    color: #000 !important;
+    border: 1px solid #ddd;
+  }
+
+  .markdown-body th,
+  .markdown-body td {
+    border: 1px solid #ccc !important;
+    color: #000 !important;
+  }
+
+  .markdown-body th {
+    background-color: #f0f0f0 !important;
+  }
+
+  .markdown-body blockquote {
+    color: #333 !important;
+    border-color: #ccc !important;
+  }
+
+  .markdown-body pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .markdown-body a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.75em;
+    color: #555 !important;
+  }
+}

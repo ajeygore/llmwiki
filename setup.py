@@ -128,6 +128,12 @@ AI Agents should read these files to ingest new knowledge into the `/wiki/` fold
         </div>
         
         <div class="meta-info">
+          <button id="printPageBtn" class="print-btn" aria-label="Print this page" title="Print this page">
+            <svg class="print-icon" viewBox="0 0 24 24" width="14" height="14">
+              <path fill="currentColor" d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-1 11H6v-5h12v5zm1-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-3-9H8v4h8V3z"/>
+            </svg>
+            Print
+          </button>
           <a href="#" id="rawLink" target="_blank" class="raw-btn">
             <svg class="raw-icon" viewBox="0 0 24 24" width="14" height="14">
               <path fill="currentColor" d="M12.89 3L14.85 3.4L11.11 21L9.15 20.6L12.89 3M19.59 12L16 8.41V5.58L22.42 12L16 18.41V15.58L19.59 12M1.58 12L8 5.58V8.41L4.41 12L8 15.58V18.41L1.58 12Z"/>

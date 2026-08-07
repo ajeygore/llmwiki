@@ -868,6 +868,16 @@ function renderGroupView(groupName) {
    LLMWiki Polish: Header Search Controller with Floating Dropdown
    ========================================================================== */
 
+// Print the currently rendered page content
+function setupPrintButton() {
+  const printBtn = document.getElementById('printPageBtn');
+  if (!printBtn) return;
+
+  printBtn.addEventListener('click', () => {
+    window.print();
+  });
+}
+
 function setupHeaderSearch() {
   const searchInput = document.getElementById('globalSearchInput');
   const clearBtn = document.getElementById('clearSearchBtn');
@@ -1130,6 +1140,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // Setup header search floating engine
   setupHeaderSearch();
+
+  // Wire up the print-page button
+  setupPrintButton();
   
   // Global click interceptor for relative markdown links
   document.addEventListener('click', (event) => {
