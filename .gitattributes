@@ -1,0 +1,12 @@
+# This repo is edited from a Windows box with core.autocrlf=true. Force LF in
+# the working tree so the launcher scripts (run, run.sh, run.py, lint, search,
+# setup.*) keep Unix line endings and run on macOS/Linux. Windows .bat stays CRLF.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
