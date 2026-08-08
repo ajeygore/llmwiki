@@ -38,7 +38,9 @@ FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 MD_LINK_RE = re.compile(r"\[[^\]]*\]\(\s*([^)\s]+?\.md)(?:#[^)]*)?\s*\)")
 # [[Wikilink]] or [[Wikilink|alias]]
 WIKILINK_RE = re.compile(r"\[\[([^\]|#]+?)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]")
-LOG_ENTRY_RE = re.compile(r"^## \[\d{4}-\d{2}-\d{2}\]\s+\w+\s+\|\s+.+")
+# The action may be hyphenated — update.md documents `update-engine` as the
+# action for an engine upgrade, which a bare \w+ rejects.
+LOG_ENTRY_RE = re.compile(r"^## \[\d{4}-\d{2}-\d{2}\]\s+[\w-]+\s+\|\s+.+")
 
 
 def resolve_wiki_dir(argv_path):
