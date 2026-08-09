@@ -88,6 +88,12 @@ Run the bootstrapping script to copy the core HTML viewer, agent schemas, and ma
   ```
 *(The `--name` parameter is optional and defaults to "LLMWiki")*
 
+The skeleton is written to **the engine's parent directory** — the workspace that owns
+this `llmwiki/` folder — regardless of which directory you run the script from. Pass
+`--root <dir>` to target somewhere else explicitly; the upgrade flow in
+[`update.md`](update.md) uses it to generate throwaway templates for diffing. The
+`📂 Wiki Root:` line the script prints always names the directory it will write to.
+
 ---
 
 ## ⚡ Starting the Server
