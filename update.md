@@ -32,13 +32,25 @@ rm -rf llmwiki/.git
 `setup.py`/`setup.sh`/`setup.bat` only **create files that are missing** — they never overwrite `index.html`, `agents.md`, `README.md`, or the `wiki/*.md` skeleton pages once they exist. That means engine upgrades that change those templates (a new header button, a new agent rule, a new page layout) do **not** reach an existing wiki automatically. After step 3, check whether this upgrade needs any of that:
 
 1. Skim recent commits on the upstream engine (`git -C llmwiki log --oneline -20` if it's a submodule, or browse `https://github.com/ajeygore/llmwiki/commits/main/setup.py` otherwise) for anything that touches `setup.py`'s `index_html_content`, `agents_md_content`, or the `wiki/` skeleton strings.
-2. If it does, generate a fresh set of templates in a **scratch empty directory** to diff against the real ones:
+2. If it does, generate a fresh set of templates into a **scratch empty directory** with `--root`, and diff those against the real ones:
    ```bash
-   mkdir -p /tmp/llmwiki-upgrade-check && cd /tmp/llmwiki-upgrade-check
-   python3 <path-to-workspace>/llmwiki/setup.py --name "<current wiki name>"
+   python3 <path-to-workspace>/llmwiki/setup.py \
+     --name "<current wiki name>" \
+     --root /tmp/llmwiki-upgrade-check
    diff /tmp/llmwiki-upgrade-check/index.html <path-to-workspace>/index.html
-   diff /tmp/llmwiki-upgrade-check/agents.md <path-to-workspace>/agents.md
+   diff /tmp/llmwiki-upgrade-check/agents.md  <path-to-workspace>/agents.md
    ```
+   > **`--root` is required here, and `cd` is not a substitute for it.** `setup.py`
+   > resolves its target from the engine's own location, so without `--root` it
+   > writes a fresh skeleton into the live workspace no matter which directory you
+   > run it from. That is not destructive — it only creates files that are missing —
+   > but on a mature wiki it silently adds root-level files the project had
+   > deliberately not adopted, and you then have to spot them in `git status` and
+   > decide on each one. Check the `📂 Wiki Root:` line the script prints before
+   > letting it finish; it always names the directory it is about to write to.
+   >
+   > If you are on an engine predating `--root`, copy `llmwiki/` into the scratch
+   > directory and run it from there instead.
 3. Manually merge in only the relevant new pieces the diff surfaces (e.g. a new button's markup in `index.html`, a new rule in `agents.md`). Preserve the user's existing customizations (wiki name, custom styling, added rules) — this is a targeted merge, not an overwrite.
 4. If nothing in this upgrade touches those templates, skip this step — most engine updates (JS/CSS fixes, new engine features that read existing markup) need no template changes at all.
 

@@ -14,5 +14,7 @@ jobs:
           python-version: "3.x"
       - name: Test the lint tool against fixtures
         run: python3 tests/test_lint.py
+      - name: Test setup.py target-directory resolution
+        run: python3 tests/test_setup.py
       - name: Syntax-check engine scripts
         run: python3 -m py_compile lint search run.py setup.py

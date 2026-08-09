@@ -19,12 +19,26 @@ def create_file_if_missing(filepath, content, description):
 def main():
     parser = argparse.ArgumentParser(description="LLMWiki Bootstrapping Engine")
     parser.add_argument('--name', default="LLMWiki", help="The name of your Wiki knowledge base")
+    parser.add_argument(
+        '--root',
+        default=None,
+        help=(
+            "Directory to generate the skeleton into. Defaults to the engine's "
+            "parent directory, which is where a normal install puts the wiki. "
+            "Pass an explicit path to generate a throwaway set of templates for "
+            "diffing during an engine upgrade (see update.md)."
+        ),
+    )
     args = parser.parse_args()
-    
+
     wiki_name = args.name
     engine_dir = os.path.dirname(os.path.abspath(__file__))
-    wiki_root = os.path.abspath(os.path.join(engine_dir, '..'))
-    
+    # The skeleton is written relative to the engine, not the current working
+    # directory, so that `python3 path/to/llmwiki/setup.py` bootstraps the wiki
+    # that owns that engine no matter where it is invoked from. --root overrides
+    # the target explicitly; cd-ing somewhere else does not, and never did.
+    wiki_root = os.path.abspath(args.root) if args.root else os.path.abspath(os.path.join(engine_dir, '..'))
+
     print("-" * 50)
     print("🚀 Initialising LLMWiki Repository Skeleton...")
     print(f"📂 Engine Location: {engine_dir}")
